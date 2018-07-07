@@ -1,0 +1,119 @@
+<html>
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+<script src="API_Key.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<head>
+  <title>Pet Queue</title>
+</head>
+<body>
+  <div id="app">
+    <div style="text-align:right;"><button v-on:click="clearQ" class="btn btn-danger">clear Q</button></div>
+    <table class="table" style="width:100%;">
+      <tr>
+        <th style="text-align:left;">Username</th>
+        <th style="width:70%;text-align:center;">Message</th>
+        <th style="text-align:right;">Actions</th>
+      </tr>
+      <tr v-for="(q, i) in queue">
+        <td style="text-align:left;">{{ q.user }}</td>
+        <td style="text-align:left;"><span v-html="q.message"></span></span></td>
+        <td style="text-align:right;">
+          <button class="btn btn-primary" v-on:click="remove(i)">remove</button>
+        </td>
+      </tr>
+    </table>
+    <div v-html="my_event"></div>
+  </div>
+</body>
+
+
+<script>
+  var vm = new Vue({
+    el: '#app',
+    data: {
+      queue: [],
+      my_event: "",
+      serviceUrl: "",
+      socket: Object
+    },
+    methods: {
+      clearQ: function() {
+        vm.queue = [];
+        document.title = "Pet Queue";
+      },
+      remove: function(i) {
+        var temp = vm.queue;
+        temp.splice(i,1);
+        vm.queue = temp;
+        document.title = vm.queue.length > 0 ? "Pet Queue (" + vm.queue.length + ")" : "Pet Queue";
+      }
+    },
+    mounted: function () {
+      //---------------------------------
+      //  Variables
+      //---------------------------------
+      this.serviceUrl = API_Socket;
+      this.socket = new WebSocket(this.serviceUrl);
+
+      //---------------------------------
+      //  Open Event
+      //---------------------------------
+      this.socket.onopen = function () {
+        // Format your Authentication Information
+        var auth = {
+          author: 'Reecon820',
+          website: 'reecon820@gmail.com',
+          api_key: API_Key,
+          events: ['EVENT_PET_QUEUE']
+        };
+
+        //  Send your Data to the server
+        vm.socket.send(JSON.stringify(auth));
+      };
+
+      //---------------------------------
+      //  Error Event
+      //---------------------------------
+      this.socket.onerror = function (error) {
+        //  Something went terribly wrong... Respond?!
+        console.log('Error: ' + error);
+      };
+
+      //---------------------------------
+      //  Message Event
+      //---------------------------------
+      this.socket.onmessage = function (message) {
+        var json = JSON.parse(message.data);
+
+        if(json.event == 'EVENT_PET_QUEUE') {
+          var data = JSON.parse(json.data);
+
+          // look for links in the message and convert them
+          var originalMessage = data.message;
+
+          var replacePattern1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
+          var linkifiedMessage = originalMessage.replace(replacePattern1, '<a href="$1" target="_blank">$1</a>');
+
+          var replacePattern2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
+          linkifiedMessage = linkifiedMessage.replace(replacePattern2, '$1<a href="http://$2" target="_blank">$2</a>');
+
+          data.message = linkifiedMessage;
+          vm.queue.push(data);
+          document.title = "Pet Queue (" + vm.queue.length + ")";
+        }
+      };
+      
+      //---------------------------------
+      //  Message Event
+      //---------------------------------
+      this.socket.onclose = function () {
+        //  Connection has been closed by you or the server
+        console.log("Connection Closed!");
+      };
+    }
+  });
+</script>
+
+</html>
