@@ -21,7 +21,7 @@ ScriptName = "PetQueue"
 Website = "reecon820@gmail.com"
 Description = "Shows links from viewers in a html file for easy visiting"
 Creator = "Reecon820"
-Version = "1.0.0.0"
+Version = "1.0.1.0"
 
 #---------------------------
 #   Define Global Variables
