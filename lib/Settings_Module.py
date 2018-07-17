@@ -9,6 +9,7 @@ class MySettings(object):
 				self.__dict__ = json.load(f, encoding="utf-8")
 		except:
 			self.Command = "!pet"
+			self.CommandAlt = "!link"
 			self.Cooldown = 0
 			self.Permission = "everyone"
 			self.Info = ""

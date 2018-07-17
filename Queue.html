@@ -5,7 +5,14 @@
 <script src="API_Key.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <head>
-  <title>Pet Queue</title>
+  <style>
+    a:visited {
+      color: red;
+    }
+    a:hover {
+      background-color: aquamarine;
+    }
+  </style>
 </head>
 <body>
   <div id="app">
@@ -34,6 +41,7 @@
     el: '#app',
     data: {
       queue: [],
+      title: "Queue",
       my_event: "",
       serviceUrl: "",
       socket: Object
@@ -41,13 +49,13 @@
     methods: {
       clearQ: function() {
         vm.queue = [];
-        document.title = "Pet Queue";
+        document.title = vm.title;
       },
       remove: function(i) {
         var temp = vm.queue;
         temp.splice(i,1);
         vm.queue = temp;
-        document.title = vm.queue.length > 0 ? "Pet Queue (" + vm.queue.length + ")" : "Pet Queue";
+        document.title = vm.queue.length > 0 ? vm.title + " (" + vm.queue.length + ")" : vm.title;
       }
     },
     mounted: function () {
@@ -56,7 +64,10 @@
       //---------------------------------
       this.serviceUrl = API_Socket;
       this.socket = new WebSocket(this.serviceUrl);
-
+      
+      this.$nextTick(() => {
+        document.title = vm.title;
+      });
       //---------------------------------
       //  Open Event
       //---------------------------------
@@ -101,7 +112,7 @@
 
           data.message = linkifiedMessage;
           vm.queue.push(data);
-          document.title = "Pet Queue (" + vm.queue.length + ")";
+          document.title = vm.title + " (" + vm.queue.length + ")";
         }
       };
       
