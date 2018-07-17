@@ -1,1 +1,0 @@
-﻿var settings = {"Info": "", "Command": "!pet", "Permission": "everyone", "Cooldown": 0};
