@@ -21,7 +21,7 @@ ScriptName = "PetQueue"
 Website = "reecon820@gmail.com"
 Description = "Shows links from viewers in a html file for easy visiting"
 Creator = "Reecon820"
-Version = "1.0.0.0"
+Version = "1.0.1.0"
 
 #---------------------------
 #   Define Global Variables
@@ -85,15 +85,14 @@ def Init():
 #---------------------------
 def Execute(data):
     #   only handle messages from chat
-    if data.IsChatMessage() and data.GetParam(0).lower() == ScriptSettings.Command and not Parent.IsOnCooldown(ScriptName, ScriptSettings.Command) and Parent.HasPermission(data.User, ScriptSettings.Permission, ScriptSettings.Info):
+    if data.IsChatMessage() and (data.GetParam(0).lower() == ScriptSettings.Command or data.GetParam(0).lower() in ScriptSettings.CommandAlt) and not Parent.IsOnCooldown(ScriptName, ScriptSettings.Command) and Parent.HasPermission(data.User, ScriptSettings.Permission, ScriptSettings.Info):
 
-        # check if target was given
-        if data.GetParam(1):
-            target = data.GetParam(1)
-        else:
+        # don't add empty messages
+        if not data.GetParam(1):
             return
         
-        cleanMessage = data.Message[len(ScriptSettings.Command):].strip()
+        #remove command from message
+        cleanMessage = data.Message.split(' ', 1)[1]
         
         jsonData = '{{"user": "{0}", "message": "{1}" }}'.format(data.User, cleanMessage)
         
