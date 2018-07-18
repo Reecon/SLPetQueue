@@ -21,7 +21,7 @@ ScriptName = "PetQueue"
 Website = "reecon820@gmail.com"
 Description = "Shows links from viewers in a html file for easy visiting"
 Creator = "Reecon820"
-Version = "1.0.1.0"
+Version = "1.0.1.1"
 
 #---------------------------
 #   Define Global Variables
@@ -70,14 +70,6 @@ def Init():
     except Exception as err:
         Parent.Log(ScriptName, "{0}".format(err))
 
-    # read client id for api access from file
-    try:
-        with codecs.open(os.path.join(os.path.dirname(__file__), "clientid.conf"), mode='r', encoding='utf-8-sig') as f:
-            global ClientID
-            ClientID = f.readline()
-    except Exception as err:
-        Parent.Log(ScriptName, "{0}".format(err))
-
     return
 
 #---------------------------
@@ -85,8 +77,19 @@ def Init():
 #---------------------------
 def Execute(data):
     #   only handle messages from chat
-    if data.IsChatMessage() and (data.GetParam(0).lower() == ScriptSettings.Command or data.GetParam(0).lower() in ScriptSettings.CommandAlt) and not Parent.IsOnCooldown(ScriptName, ScriptSettings.Command) and Parent.HasPermission(data.User, ScriptSettings.Permission, ScriptSettings.Info):
+    if data.IsChatMessage() and not Parent.IsOnCooldown(ScriptName, ScriptSettings.Command) and Parent.HasPermission(data.User, ScriptSettings.Permission, ScriptSettings.Info):
 
+        isComamnd = data.GetParam(0).lower() == ScriptSettings.Command
+
+        if not isComamnd:
+            alts = ScriptSettings.CommandAlt.split(" ")
+            for s in alts:
+                if s == data.GetParam(0).lower():
+                    isCommand = True
+                    break
+            if not isCommand:
+                return
+                
         # don't add empty messages
         if not data.GetParam(1):
             return
