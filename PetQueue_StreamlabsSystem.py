@@ -6,6 +6,7 @@ import codecs
 import sys
 import json
 import re
+import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "lib")) #point at lib folder for classes / references
 
 import clr
@@ -21,7 +22,7 @@ ScriptName = "PetQueue"
 Website = "reecon820@gmail.com"
 Description = "Shows links from viewers in a html file for easy visiting"
 Creator = "Reecon820"
-Version = "1.0.1.1"
+Version = "1.0.2.0"
 
 #---------------------------
 #   Define Global Variables
@@ -33,6 +34,9 @@ ScriptSettings = MySettings()
 
 global QueueHtmlPath
 QueueHtmlPath = os.path.abspath(os.path.join(os.path.dirname(__file__), "Queue.html"))
+
+global Queue
+Queue = []
 
 #---------------------------
 #   [Required] Initialize Data (Only called on load)
@@ -79,9 +83,9 @@ def Execute(data):
     #   only handle messages from chat
     if data.IsChatMessage() and not Parent.IsOnCooldown(ScriptName, ScriptSettings.Command) and Parent.HasPermission(data.User, ScriptSettings.Permission, ScriptSettings.Info):
 
-        isComamnd = data.GetParam(0).lower() == ScriptSettings.Command
+        isCommand = data.GetParam(0).lower() == ScriptSettings.Command
 
-        if not isComamnd:
+        if not isCommand:
             alts = ScriptSettings.CommandAlt.split(" ")
             for s in alts:
                 if s == data.GetParam(0).lower():
@@ -98,6 +102,8 @@ def Execute(data):
         cleanMessage = data.Message.split(' ', 1)[1]
         
         jsonData = '{{"user": "{0}", "message": "{1}" }}'.format(data.User, cleanMessage)
+
+        Queue.append(jsonData)
         
         Parent.BroadcastWsEvent("EVENT_PET_QUEUE", jsonData)
         Parent.AddCooldown(ScriptName, ScriptSettings.Command, ScriptSettings.Cooldown)  # Put the command on cooldown
@@ -139,5 +145,8 @@ def ScriptToggled(state):
 
 def OpenQueueFile():
     os.startfile(QueueHtmlPath)
+    time.sleep(1) # give it time to connect web socket
+    Parent.BroadcastWsEvent('EVENT_PET_QUEUE_HISTORY', json.dumps(Queue))
+    del Queue[:]
     return
 

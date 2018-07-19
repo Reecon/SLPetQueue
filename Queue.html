@@ -56,6 +56,18 @@
         temp.splice(i,1);
         vm.queue = temp;
         document.title = vm.queue.length > 0 ? vm.title + " (" + vm.queue.length + ")" : vm.title;
+      },
+      linkify: function(message) {
+        // look for links in the message and convert them
+        var originalMessage = message;
+
+        var replacePattern1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
+        var linkifiedMessage = originalMessage.replace(replacePattern1, '<a href="$1" target="_blank">$1</a>');
+
+        var replacePattern2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
+        linkifiedMessage = linkifiedMessage.replace(replacePattern2, '$1<a href="http://$2" target="_blank">$2</a>');
+
+        return linkifiedMessage;
       }
     },
     mounted: function () {
@@ -77,7 +89,7 @@
           author: 'Reecon820',
           website: 'reecon820@gmail.com',
           api_key: API_Key,
-          events: ['EVENT_PET_QUEUE']
+          events: ['EVENT_PET_QUEUE', 'EVENT_PET_QUEUE_HISTORY']
         };
 
         //  Send your Data to the server
@@ -101,18 +113,21 @@
         if(json.event == 'EVENT_PET_QUEUE') {
           var data = JSON.parse(json.data);
 
-          // look for links in the message and convert them
-          var originalMessage = data.message;
-
-          var replacePattern1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
-          var linkifiedMessage = originalMessage.replace(replacePattern1, '<a href="$1" target="_blank">$1</a>');
-
-          var replacePattern2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
-          linkifiedMessage = linkifiedMessage.replace(replacePattern2, '$1<a href="http://$2" target="_blank">$2</a>');
-
-          data.message = linkifiedMessage;
+          data.message = vm.linkify(data.message);
           vm.queue.push(data);
           document.title = vm.title + " (" + vm.queue.length + ")";
+        }
+        
+        if (json.event == 'EVENT_PET_QUEUE_HISTORY') {
+          var data = JSON.parse(json.data);
+          
+          for (item of data) {
+            item = JSON.parse(item);
+
+            item.message = vm.linkify(item.message);
+            vm.queue.push(item);
+            document.title = vm.title + " (" + vm.queue.length + ")";
+          }
         }
       };
       
