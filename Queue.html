@@ -15,9 +15,12 @@
   </style>
 </head>
 <body>
-  <div id="app">
-    <div style="text-align:right;"><button v-on:click="clearQ" class="btn btn-danger">clear Q</button></div>
-    <table class="table" style="width:100%;">
+  <div id="app" style="overflow: auto">
+    <div id="top_buttons" style="position: fixed; width: 100%; background: ghostwhite">
+      <div style="float: left;"><button v-on:click="openAll" class="btn btn-success">open all</button></div>
+      <div style="float: right;"><button v-on:click="clearQ" class="btn btn-danger">clear Q</button></div>
+    </div>
+    <table class="table" style="width:100%; margin-top: 40px">
       <tr>
         <th style="text-align:left;">Username</th>
         <th style="width:70%;text-align:center;">Message</th>
@@ -68,6 +71,13 @@
         linkifiedMessage = linkifiedMessage.replace(replacePattern2, '$1<a href="http://$2" target="_blank">$2</a>');
 
         return linkifiedMessage;
+      },
+      openAll: () => {
+        links = document.getElementsByTagName('a')
+
+        for (a of links) {
+          window.open(a.href, '_blank');
+        }
       }
     },
     mounted: function () {
