@@ -11,7 +11,7 @@
         "label": "Alternative Commands", 
         "tooltip": "Alternative commands speparated by spaces", 
         "type": "textbox", 
-        "value": "!link"
+        "value": "!art"
     }, 
     "Cooldown": {
         "group": "Core", 
@@ -21,7 +21,7 @@
         "ticks": 1, 
         "tooltip": "How long the command should go on cooldown for", 
         "type": "slider", 
-        "value": 10.0
+        "value": 0.0
     }, 
     "Info": {
         "group": "Core", 
@@ -44,11 +44,57 @@
         "type": "dropdown", 
         "value": "everyone"
     }, 
+    "RemoteCommand": {
+        "group": "Remote", 
+        "label": "Remote Command", 
+        "tooltip": "The command for opening links remotely", 
+        "type": "textbox", 
+        "value": "!q"
+    }, 
+    "RemoteCooldown": {
+        "group": "Remote", 
+        "label": "Cooldown (seconds)", 
+        "max": 100, 
+        "min": 0, 
+        "ticks": 1, 
+        "tooltip": "How long the whisper command should go on cooldown for", 
+        "type": "slider", 
+        "value": 1
+    }, 
+    "RemoteInfo": {
+        "group": "Remote", 
+        "label": "Remote Info", 
+        "tooltip": "This field should only be filled when using the user_specific permission.", 
+        "type": "textbox", 
+        "value": ""
+    }, 
+    "RemotePermission": {
+        "group": "Remote", 
+        "items": [
+            "everyone", 
+            "moderator", 
+            "subscriber", 
+            "user_specific", 
+            "editor"
+        ], 
+        "label": "Permission for remote control", 
+        "tooltip": "Who is able to use the whisper command", 
+        "type": "dropdown", 
+        "value": "moderator"
+    }, 
     "btnOpen": {
         "function": "OpenQueueFile", 
         "group": "Core", 
         "label": "Open Queue", 
         "tooltip": "Queue must be opened to recieve entries", 
+        "type": "button", 
+        "wsevent": "EVENT_NONE"
+    }, 
+    "btnOpenViewer": {
+        "function": "OpenViewerFile", 
+        "group": "Remote", 
+        "label": "Open Viewer", 
+        "tooltip": "Opens the viewer to show queued links", 
         "type": "button", 
         "wsevent": "EVENT_NONE"
     }, 
