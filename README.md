@@ -14,7 +14,7 @@ You can use this queue in two ways. Through the `Queue.html` page or remote cont
 
 __Note:__ I would recommend using only one method, based on how easily accessible the manual queue is for you during your streams.
 
-## Queue.hmtl
+### Queue.hmtl
 
 Open the HTML file by clicking the `Open Queue` button in the `Core` section of the script's settings UI. It will start listening for incoming events
 and display the messages and links in a list.
@@ -29,7 +29,7 @@ __Note:__ Removing item here, will not remove them from the remote controlled qu
 
 __Note:__ Opening the HTML file will clear the internal queue for remote control.
 
-## Viewer.html
+### Viewer.html
 
 In the `Remote` section of the script settings, you can find the options for the remote control feature. This is inteded to be used by your moderators or other viewers via whispers in situations where you can't go through the manual list by yourself.
 
@@ -56,5 +56,7 @@ info | | Responds in a whisper with the length of the queue and the current posi
 clear | | Deletes the entire queue!
 
 __Note:__ All indices are starting at `0`. For example `!q preview 0` gives information about the first element of the queue.
+
+__Note:__ You have to allow popups for this site for so the page can open the links.
 
 __Note:__ Removing items here will not remove them from the manual queue.
