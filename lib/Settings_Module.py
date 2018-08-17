@@ -13,6 +13,10 @@ class MySettings(object):
 			self.Cooldown = 0
 			self.Permission = "everyone"
 			self.Info = ""
+			self.RemoteCommand = "!q"
+			self.RemoteCooldown = 1
+			self.RemotePermission = "moderator"
+			self.RemoteInfo = ""
 
 	def Reload(self, jsondata):
 		self.__dict__ = json.loads(jsondata, encoding="utf-8")

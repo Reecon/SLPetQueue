@@ -1,0 +1,104 @@
+<html>
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+<script src="API_Key.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<head>
+  <title>PetQueueViewer</title>
+</head>
+<body style="background-color: rgb(0, 255, 0)">
+  <div id="app">
+  </div>
+</body>
+
+
+<script>
+  var vm = new Vue({
+    el: '#app',
+    data: {
+      queue: [],
+      current: 0,
+      viewTab: undefined,
+      interval: undefined,
+      my_event: "",
+      serviceUrl: "",
+      socket: Object
+    },
+    watch: {
+      queue: (q) => {
+        vm.current = 0
+        vm.viewTab = window.open(vm.queue[vm.current]);
+        vm.interval = window.setInterval(() => {
+          
+          if (vm.viewTab) {
+            vm.viewTab.close();
+            vm.current++;
+          }
+          if (vm.current < vm.queue.length) {
+            vm.viewTab = window.open(vm.queue[vm.current]);
+          } else {
+            vm.viewTab = undefined;
+            vm.current = 0;
+            window.clearInterval(vm.interval);
+          }
+        }, 15 * 1000);
+        
+      } 
+    },
+    mounted: function () {
+      //---------------------------------
+      //  Variables
+      //---------------------------------
+      this.serviceUrl = API_Socket;
+      this.socket = new WebSocket(this.serviceUrl);
+      
+      //---------------------------------
+      //  Open Event
+      //---------------------------------
+      this.socket.onopen = function () {
+        // Format your Authentication Information
+        var auth = {
+          author: 'Reecon820',
+          website: 'reecon820@gmail.com',
+          api_key: API_Key,
+          events: ['EVENT_SHOW_QUEUE_ITEM']
+        };
+
+        //  Send your Data to the server
+        vm.socket.send(JSON.stringify(auth));
+      };
+
+      //---------------------------------
+      //  Error Event
+      //---------------------------------
+      this.socket.onerror = function (error) {
+        //  Something went terribly wrong... Respond?!
+        console.log('Error: ' + error);
+      };
+
+      //---------------------------------
+      //  Message Event
+      //---------------------------------
+      this.socket.onmessage = function (message) {
+        var json = JSON.parse(message.data);
+
+        if(json.event == 'EVENT_SHOW_QUEUE_ITEM') {
+          
+          var data = JSON.parse(json.data);
+          vm.queue = data.links;
+        }
+      };
+      
+      //---------------------------------
+      //  Message Event
+      //---------------------------------
+      this.socket.onclose = function () {
+        //  Connection has been closed by you or the server
+        console.log("Connection Closed!");
+      };
+    }
+  });
+</script>
+
+</html>
