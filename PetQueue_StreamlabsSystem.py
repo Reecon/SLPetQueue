@@ -13,8 +13,6 @@ import clr
 clr.AddReference("IronPython.SQLite.dll")
 clr.AddReference("IronPython.Modules.dll")
 
-#   Import your Settings class
-from Settings_Module import MySettings
 #---------------------------
 #   [Required] Script Information
 #---------------------------
@@ -22,27 +20,58 @@ ScriptName = "PetQueue"
 Website = "reecon820@gmail.com"
 Description = "Shows links from viewers in a html file for easy visiting"
 Creator = "Reecon820"
-Version = "1.1.0.0"
+Version = "1.1.1.0"
+
+#---------------------------
+#   Settings Handling
+#---------------------------
+class PqSettings:
+	def __init__(self, settingsfile=None):
+		try:
+			with codecs.open(settingsfile, encoding="utf-8-sig", mode="r") as f:
+				self.__dict__ = json.load(f, encoding="utf-8")
+		except:
+			self.Command = "!pet"
+			self.CommandAlt = "!link"
+			self.Cooldown = 0
+			self.Permission = "everyone"
+			self.Info = ""
+			self.RemoteCommand = "!q"
+			self.RemoteCooldown = 1
+			self.RemotePermission = "moderator"
+			self.RemoteInfo = ""
+
+	def Reload(self, jsondata):
+		self.__dict__ = json.loads(jsondata, encoding="utf-8")
+
+	def Save(self, settingsfile):
+		try:
+			with codecs.open(settingsfile, encoding="utf-8-sig", mode="w+") as f:
+				json.dump(self.__dict__, f, encoding="utf-8")
+			with codecs.open(settingsfile.replace("json", "js"), encoding="utf-8-sig", mode="w+") as f:
+				f.write("var settings = {0};".format(json.dumps(self.__dict__, encoding='utf-8')))
+		except:
+			Parent.Log(ScriptName, "Failed to save settings to file.")
 
 #---------------------------
 #   Define Global Variables
 #---------------------------
-global SettingsFile
-SettingsFile = ""
-global ScriptSettings
-ScriptSettings = MySettings()
+global pqSettingsFile
+pqSettingsFile = ""
+global pqScriptSettings
+pqScriptSettings = PqSettings()
 
-global QueueHtmlPath
-QueueHtmlPath = os.path.abspath(os.path.join(os.path.dirname(__file__), "Queue.html"))
+global pqQueueHtmlPath
+pqQueueHtmlPath = os.path.abspath(os.path.join(os.path.dirname(__file__), "Queue.html"))
 
-global ViewerHtmlPath
-ViewerHtmlPath = os.path.abspath(os.path.join(os.path.dirname(__file__), "Viewer.html"))
+global pqViewerHtmlPath
+pqViewerHtmlPath = os.path.abspath(os.path.join(os.path.dirname(__file__), "Viewer.html"))
 
-global Queue
-Queue = []
+global pqQueue
+pqQueue = []
 
-global currentIndex
-currentIndex = -1
+global pqCurrentIndex
+pqCurrentIndex = -1
 
 #---------------------------
 #   [Required] Initialize Data (Only called on load)
@@ -55,49 +84,24 @@ def Init():
         os.makedirs(directory)
 
     #   Load settings
-    global SettingsFile
-    SettingsFile = os.path.join(os.path.dirname(__file__), "Settings\settings.json")
-    global ScriptSettings
-    ScriptSettings = MySettings(SettingsFile)
+    global pqSettingsFile
+    pqSettingsFile = os.path.join(os.path.dirname(__file__), "Settings\settings.json")
+    global pqScriptSettings
+    pqScriptSettings = PqSettings(pqSettingsFile)
 
-    ui = {}
-    UiFilePath = os.path.join(os.path.dirname(__file__), "UI_Config.json")
-    try:
-        with codecs.open(UiFilePath, encoding="utf-8-sig", mode="r") as f:
-            ui = json.load(f, encoding="utf-8")
-    except Exception as err:
-        Parent.Log(ScriptName, "{0}".format(err))
-
-    # update ui with loaded settings
-    ui['Command']['value'] = ScriptSettings.Command
-    ui['CommandAlt']['value'] = ScriptSettings.CommandAlt
-    ui['Cooldown']['value'] = ScriptSettings.Cooldown
-    ui['Permission']['value'] = ScriptSettings.Permission
-    ui['Info']['value'] = ScriptSettings.Info
-    ui['RemoteCommand']['value'] = ScriptSettings.RemoteCommand
-    ui['RemoteCooldown']['value'] = ScriptSettings.RemoteCooldown
-    ui['RemotePermission']['value'] = ScriptSettings.RemotePermission
-    ui['RemoteInfo']['value'] = ScriptSettings.RemoteInfo
-
-    try:
-        with codecs.open(UiFilePath, encoding="utf-8-sig", mode="w+") as f:
-            json.dump(ui, f, encoding="utf-8", indent=4, sort_keys=True)
-    except Exception as err:
-        Parent.Log(ScriptName, "{0}".format(err))
-
-    return
+    updateUi()
 
 #---------------------------
 #   [Required] Execute Data / Process messages
 #---------------------------
 def Execute(data):
     #   only handle messages from chat
-    if data.IsChatMessage() and not Parent.IsOnCooldown(ScriptName, ScriptSettings.Command) and Parent.HasPermission(data.User, ScriptSettings.Permission, ScriptSettings.Info) and not data.IsWhisper():
+    if data.IsChatMessage() and not Parent.IsOnCooldown(ScriptName, pqScriptSettings.Command) and Parent.HasPermission(data.User, pqScriptSettings.Permission, pqScriptSettings.Info) and not data.IsWhisper():
 
-        isCommand = data.GetParam(0).lower() == ScriptSettings.Command
+        isCommand = data.GetParam(0).lower() == pqScriptSettings.Command
 
         if not isCommand:
-            alts = ScriptSettings.CommandAlt.split(" ")
+            alts = pqScriptSettings.CommandAlt.split(" ")
             for s in alts:
                 if s == data.GetParam(0).lower():
                     isCommand = True
@@ -114,16 +118,16 @@ def Execute(data):
         
         jsonData = '{{"user": "{0}", "message": "{1}" }}'.format(data.User, cleanMessage)
 
-        Queue.append(jsonData)
-        if currentIndex < 0:
-            global currentIndex
-            currentIndex = 0
+        pqQueue.append(jsonData)
+        if pqCurrentIndex < 0:
+            global pqCurrentIndex
+            pqCurrentIndex = 0
         
         Parent.BroadcastWsEvent("EVENT_PET_QUEUE", jsonData)
-        Parent.AddCooldown(ScriptName, ScriptSettings.Command, ScriptSettings.Cooldown)  # Put the command on cooldown
+        Parent.AddCooldown(ScriptName, pqScriptSettings.Command, pqScriptSettings.Cooldown)  # Put the command on cooldown
 
     # handle remote whisper commands
-    if data.IsWhisper() and data.IsFromTwitch() and data.GetParam(0).lower() == ScriptSettings.RemoteCommand and not Parent.IsOnCooldown(ScriptName, ScriptSettings.Command) and Parent.HasPermission(data.User, ScriptSettings.RemotePermission, ScriptSettings.RemoteInfo):
+    if data.IsWhisper() and data.IsFromTwitch() and data.GetParam(0).lower() == pqScriptSettings.RemoteCommand and not Parent.IsOnCooldown(ScriptName, pqScriptSettings.Command) and Parent.HasPermission(data.User, pqScriptSettings.RemotePermission, pqScriptSettings.RemoteInfo):
         
         commandInfo = 'show, preview, skip, show <index>, preview <index>, remove <index>, clear, info'
         
@@ -193,8 +197,9 @@ def Parse(parseString, userid, username, targetid, targetname, message):
 #---------------------------
 def ReloadSettings(jsonData):
     # Execute json reloading here
-    ScriptSettings.Reload(jsonData)
-    ScriptSettings.Save(SettingsFile)
+    pqScriptSettings.Reload(jsonData)
+    pqScriptSettings.Save(pqSettingsFile)
+    updateUi()
     return
 
 #---------------------------
@@ -210,97 +215,99 @@ def ScriptToggled(state):
     return
 
 def OpenQueueFile():
-    os.startfile(QueueHtmlPath)
+    os.startfile(pqQueueHtmlPath)
     time.sleep(2) # give it time to connect web socket
-    Parent.BroadcastWsEvent('EVENT_PET_QUEUE_HISTORY', json.dumps(Queue))
-    del Queue[:]
-    global currentIndex
-    currentIndex = -1
+    Parent.BroadcastWsEvent('EVENT_PET_QUEUE_HISTORY', json.dumps(pqQueue))
+    del pqQueue[:]
+    global pqCurrentIndex
+    pqCurrentIndex = -1
     return
 
 def OpenViewerFile():
-    os.startfile(ViewerHtmlPath)
+    os.startfile(pqViewerHtmlPath)
     return
 
 def ShowItem(index, user):
     if index != None:
-        if index < len(Queue):
-            item = json.loads(Queue[index])
+        if index < len(pqQueue):
+            item = json.loads(pqQueue[index])
             Parent.BroadcastWsEvent('EVENT_SHOW_QUEUE_ITEM', '{0}'.format(json.dumps(GetLinksFromItem(index))))
             Parent.SendStreamWhisper(user, "Showing link from item: [{0}] {1}: {2}".format(index, item['user'], item['message']))
         else:
-            Parent.SendStreamWhisper(user, "Queue is only {} items long".format(len(Queue)))
+            Parent.SendStreamWhisper(user, "Queue is only {} items long".format(len(pqQueue)))
     else:
-        if currentIndex < len(Queue):
-            item = json.loads(Queue[currentIndex])
-            Parent.BroadcastWsEvent('EVENT_SHOW_QUEUE_ITEM', '{0}'.format(json.dumps(GetLinksFromItem(currentIndex))))
-            Parent.SendStreamWhisper(user, "Showing link from item: [{0}] {1}: {2}".format(currentIndex,item['user'],item['message']))
+        if pqCurrentIndex < len(pqQueue):
+            item = json.loads(pqQueue[currentIndex])
+            Parent.BroadcastWsEvent('EVENT_SHOW_QUEUE_ITEM', '{0}'.format(json.dumps(GetLinksFromItem(pqCurrentIndex))))
+            Parent.SendStreamWhisper(user, "Showing link from item: [{0}] {1}: {2}".format(pqCurrentIndex,item['user'],item['message']))
             time.sleep(1)
 
-            oldIndex = currentIndex
+            oldIndex = pqCurrentIndex
             
-            global currentIndex
-            currentIndex = oldIndex + 1
+            global pqCurrentIndex
+            pqCurrentIndex = oldIndex + 1
 
-            if len(Queue) > currentIndex:
-                item = json.loads(Queue[currentIndex])
-                Parent.SendStreamWhisper(user, "Next item is: [{0}] {1}: {2}".format(currentIndex, item['user'], item['message']))
+            if len(pqQueue) > pqCurrentIndex:
+                item = json.loads(pqQueue[pqCurrentIndex])
+                Parent.SendStreamWhisper(user, "Next item is: [{0}] {1}: {2}".format(pqCurrentIndex, item['user'], item['message']))
             else:
                 Parent.SendStreamWhisper(user, "This was the last item in the queue!")
+        else:
+            Parent.SentStreamWhisper(user, "No more items in the queue!")
 
     return
 
 def PreviewItem(index, user):
     if index != None:
-        if index < len(Queue):
-            item = json.loads(Queue[index])
+        if index < len(pqQueue):
+            item = json.loads(pqQueue[index])
             Parent.SendStreamWhisper(user, "Item at position [{0}] would be: {1}: {2}".format(index, item['user'], item['message']))
         else:
-            Parent.SendStreamWhisper(user, "Queue only has {} item(s)".format(len(Queue)))
+            Parent.SendStreamWhisper(user, "Queue only has {} item(s)".format(len(pqQueue)))
     else:
-        item = json.loads(Queue[currentIndex])
-        Parent.SendStreamWhisper(user, "Next item would be: [{0}] {1}: {2}".format(currentIndex, item['user'], item['message']))
+        item = json.loads(pqQueue[pqCurrentIndex])
+        Parent.SendStreamWhisper(user, "Next item would be: [{0}] {1}: {2}".format(pqCurrentIndex, item['user'], item['message']))
     return
 
 def SkipItem(user):
-    if len(Queue) > currentIndex:
-        item = json.loads(Queue[currentIndex])
-        Parent.SendStreamWhisper(user, "Skipping item: [{0}] {1}: {2}".format(currentIndex, item['user'],item['message']))
+    if len(pqQueue) > pqCurrentIndex:
+        item = json.loads(pqQueue[pqCurrentIndex])
+        Parent.SendStreamWhisper(user, "Skipping item: [{0}] {1}: {2}".format(pqCurrentIndex, item['user'],item['message']))
         time.sleep(1)
         
-        oldIndex = currentIndex
+        oldIndex = pqCurrentIndex
 
-        global currentIndex
-        currentIndex = oldIndex + 1
+        global pqCurrentIndex
+        pqCurrentIndex = oldIndex + 1
 
-        if len(Queue) > currentIndex:
-            item = json.loads(Queue[currentIndex])
-            Parent.SendStreamWhisper(user, "Next item is: [{0}] {1}: {2}".format(currentIndex, item['user'], item['message']))
+        if len(pqQueue) > pqCurrentIndex:
+            item = json.loads(pqQueue[pqCurrentIndex])
+            Parent.SendStreamWhisper(user, "Next item is: [{0}] {1}: {2}".format(pqCurrentIndex, item['user'], item['message']))
         else:
             Parent.SendStreamWhisper(user, "This was the last item in the queue!")
     else:
-        Parent.SendStreamWhisper(user, "No more items in the Queue")
+        Parent.SendStreamWhisper(user, "No more items in the queue")
     return
 
 def RemoveItem(index, user):
     if index != None:
-        if index < len(Queue):
-            item = json.loads(Queue[index])
+        if index < len(pqQueue):
+            item = json.loads(pqQueue[index])
             Parent.SendStreamWhisper(user, "Removing item: [{0}] {1}: {2}".format(index, item['user'], item['message']))
-            del Queue[index]
+            del pqQueue[index]
 
             # if an element before the current index was removed, point to the old element again
-            if index < currentIndex:
-                oldIndex = currentIndex
-                global currentIndex
-                currentIndex = oldIndex - 1
+            if index < pqCurrentIndex:
+                oldIndex = pqCurrentIndex
+                global pqCurrentIndex
+                pqCurrentIndex = oldIndex - 1
             
             # if the current index is now out of bounds, set it to the last element
-            if currentIndex >= len(Queue):
-                global currentIndex
-                currentIndex = len(Queue) - 1
+            if pqCurrentIndex >= len(pqQueue):
+                global pqCurrentIndex
+                pqCurrentIndex = len(pqQueue) - 1
         else:
-            Parent.SendStreamWhisper(user, "Queue only has {} item(s)".format(len(Queue)))
+            Parent.SendStreamWhisper(user, "Queue only has {} item(s)".format(len(pqQueue)))
     else:
         Parent.SendStreamWhisper(user, "Please provide the index of the item you want to remove.")
         
@@ -308,20 +315,46 @@ def RemoveItem(index, user):
 
 def ClearQueue(user):
     Parent.SendStreamWhisper(user, "Clearing the entire queue, I hope you knew what you were doing Kappa")
-    del Queue[:]
-    global currentIndex
-    currentIndex = -1
+    del pqQueue[:]
+    global pqCurrentIndex
+    pqCurrentIndex = -1
     return
 
 def SendInfo(user):
-    Parent.SendStreamWhisper(user, "The queue has {0} item(s). The next item to be shown is at index {1}".format(len(Queue), currentIndex))
+    Parent.SendStreamWhisper(user, "The queue has {0} item(s). The next item to be shown is at index {1}".format(len(pqQueue), pqCurrentIndex))
     return
 
 
 def GetLinksFromItem(index):
-    item = json.loads(Queue[index])
+    item = json.loads(pqQueue[index])
     originalMessage = item['message']
 
     results = re.findall(r'(https?://[^\s]+)', originalMessage)
     links = {'links': results}
     return links
+
+def updateUi():
+    ui = {}
+    UiFilePath = os.path.join(os.path.dirname(__file__), "UI_Config.json")
+    try:
+        with codecs.open(UiFilePath, encoding="utf-8-sig", mode="r") as f:
+            ui = json.load(f, encoding="utf-8")
+    except Exception as err:
+        Parent.Log(ScriptName, "{0}".format(err))
+
+    # update ui with loaded settings
+    ui['Command']['value'] = pqScriptSettings.Command
+    ui['CommandAlt']['value'] = pqScriptSettings.CommandAlt
+    ui['Cooldown']['value'] = pqScriptSettings.Cooldown
+    ui['Permission']['value'] = pqScriptSettings.Permission
+    ui['Info']['value'] = pqScriptSettings.Info
+    ui['RemoteCommand']['value'] = pqScriptSettings.RemoteCommand
+    ui['RemoteCooldown']['value'] = pqScriptSettings.RemoteCooldown
+    ui['RemotePermission']['value'] = pqScriptSettings.RemotePermission
+    ui['RemoteInfo']['value'] = pqScriptSettings.RemoteInfo
+
+    try:
+        with codecs.open(UiFilePath, encoding="utf-8-sig", mode="w+") as f:
+            json.dump(ui, f, encoding="utf-8", indent=4, sort_keys=True)
+    except Exception as err:
+        Parent.Log(ScriptName, "{0}".format(err))
