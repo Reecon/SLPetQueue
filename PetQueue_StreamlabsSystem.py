@@ -237,7 +237,7 @@ def ShowItem(index, user):
             Parent.SendStreamWhisper(user, "Queue is only {} items long".format(len(pqQueue)))
     else:
         if pqCurrentIndex < len(pqQueue):
-            item = json.loads(pqQueue[currentIndex])
+            item = json.loads(pqQueue[pqCurrentIndex])
             Parent.BroadcastWsEvent('EVENT_SHOW_QUEUE_ITEM', '{0}'.format(json.dumps(GetLinksFromItem(pqCurrentIndex))))
             Parent.SendStreamWhisper(user, "Showing link from item: [{0}] {1}: {2}".format(pqCurrentIndex,item['user'],item['message']))
             time.sleep(1)
@@ -253,7 +253,7 @@ def ShowItem(index, user):
             else:
                 Parent.SendStreamWhisper(user, "This was the last item in the queue!")
         else:
-            Parent.SentStreamWhisper(user, "No more items in the queue!")
+            Parent.SendStreamWhisper(user, "No more items in the queue!")
 
     return
 
@@ -265,8 +265,11 @@ def PreviewItem(index, user):
         else:
             Parent.SendStreamWhisper(user, "Queue only has {} item(s)".format(len(pqQueue)))
     else:
-        item = json.loads(pqQueue[pqCurrentIndex])
-        Parent.SendStreamWhisper(user, "Next item would be: [{0}] {1}: {2}".format(pqCurrentIndex, item['user'], item['message']))
+        if pqCurrentIndex < len(pqQueue):
+            item = json.loads(pqQueue[pqCurrentIndex])
+            Parent.SendStreamWhisper(user, "Next item would be: [{0}] {1}: {2}".format(pqCurrentIndex, item['user'], item['message']))
+        else:
+            Parent.SendStreamWhisper(user, "No more items in the queue!")
     return
 
 def SkipItem(user):
