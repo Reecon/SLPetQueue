@@ -20,7 +20,7 @@ ScriptName = "PetQueue"
 Website = "reecon820@gmail.com"
 Description = "Shows links from viewers in a html file for easy visiting"
 Creator = "Reecon820"
-Version = "1.1.1.0"
+Version = "1.1.2.0"
 
 #---------------------------
 #   Settings Handling
@@ -114,15 +114,15 @@ def Execute(data):
             return
         
         #remove command from message
-        cleanMessage = data.Message.split(' ', 1)[1]
-        
+        cleanMessage = data.Message.split(' ', 1)[1].replace("'", '"').replace('"', '\\"')
+
         jsonData = '{{"user": "{0}", "message": "{1}" }}'.format(data.User, cleanMessage)
 
         pqQueue.append(jsonData)
         if pqCurrentIndex < 0:
             global pqCurrentIndex
             pqCurrentIndex = 0
-        
+
         Parent.BroadcastWsEvent("EVENT_PET_QUEUE", jsonData)
         Parent.AddCooldown(ScriptName, pqScriptSettings.Command, pqScriptSettings.Cooldown)  # Put the command on cooldown
 
