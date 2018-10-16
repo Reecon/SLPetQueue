@@ -20,7 +20,7 @@ ScriptName = "PetQueue"
 Website = "reecon820@gmail.com"
 Description = "Shows links from viewers in a html file for easy visiting"
 Creator = "Reecon820"
-Version = "1.1.2.0"
+Version = "1.1.2.1"
 
 #---------------------------
 #   Settings Handling
@@ -114,8 +114,8 @@ def Execute(data):
             return
         
         #remove command from message
-        cleanMessage = data.Message.split(' ', 1)[1].replace("'", '"').replace('"', '\\"')
-
+        cleanMessage = data.Message.split(' ', 1)[1].replace('"', '\\"')
+        
         jsonData = '{{"user": "{0}", "message": "{1}" }}'.format(data.User, cleanMessage)
 
         pqQueue.append(jsonData)
