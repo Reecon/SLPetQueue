@@ -328,9 +328,14 @@ def SendInfo(user):
     return
 
 
-def GetLinksFromItem(index):
-    item = json.loads(pqQueue[index])
-    originalMessage = item['message']
+def GetLinksFromItem(value):
+    originalMessage = ""
+
+    if isinstance(value, int):
+        item = json.loads(pqQueue[value])
+        originalMessage = item['message']
+    elif isinstance(value, str):
+        originalMessage = value
 
     results = re.findall(r'(https?://[^\s]+)', originalMessage)
     links = {'links': results}
