@@ -20,7 +20,7 @@ ScriptName = "PetQueue"
 Website = "reecon820@gmail.com"
 Description = "Shows links from viewers in a html file for easy visiting"
 Creator = "Reecon820"
-Version = "1.1.2.1"
+Version = "1.1.3.0"
 
 #---------------------------
 #   Settings Handling
@@ -129,7 +129,7 @@ def Execute(data):
     # handle remote whisper commands
     if data.IsWhisper() and data.IsFromTwitch() and data.GetParam(0).lower() == pqScriptSettings.RemoteCommand and not Parent.IsOnCooldown(ScriptName, pqScriptSettings.Command) and Parent.HasPermission(data.User, pqScriptSettings.RemotePermission, pqScriptSettings.RemoteInfo):
         
-        commandInfo = 'show, preview, skip, show <index>, preview <index>, remove <index>, clear, info'
+        commandInfo = 'show, preview, skip, show <index>, preview <index>, remove <index>, clear, info, direct'
         
         qCommand1 = None
         qCommand2 = None
@@ -149,7 +149,7 @@ def Execute(data):
         
         # validate command
         if qCommand1:
-            if not qCommand1 in ['show', 'preview', 'skip', 'remove', 'clear', 'info']:
+            if not qCommand1 in ['show', 'preview', 'skip', 'remove', 'clear', 'info', 'direct']:
                 Parent.SendStreamWhisper(data.User, "{0} is not a valid command. Try one of these: {1}".format(qCommand1, commandInfo))
                 return
         
@@ -165,6 +165,15 @@ def Execute(data):
                     Parent.SendStreamWhisper(data.User, "The 2nd param must be positive number")
                     return
         
+        if qCommand1 in ['direct']:
+            if qCommand2:
+                links = GetLinksFromItem(qCommand2)
+                if len(links['links']) == 1:
+                    qCommand2 = links
+                else:
+                    Parent.SendStreamWhisper(data.User, "The 2nd param must be exactly one link")
+                    return
+        
         if qCommand1 == 'show':
             ShowItem(qCommand2, data.User)
         elif qCommand1 == 'preview':
@@ -177,6 +186,8 @@ def Execute(data):
             ClearQueue(data.User)
         elif qCommand1 == 'info':
             SendInfo(data.User)
+        elif qCommand1 == 'direct':
+            ShowDirectly(qCommand2, data.User)
 
     return
 
@@ -226,6 +237,10 @@ def OpenQueueFile():
 def OpenViewerFile():
     os.startfile(pqViewerHtmlPath)
     return
+
+def ShowDirectly(link, user):
+    Parent.BroadcastWsEvent('EVENT_SHOW_QUEUE_ITEM', '{0}'.format(json.dumps(link)))
+    Parent.SendStreamWhisper(user, "Showing direct link: {0}".format(link['links'][0]))
 
 def ShowItem(index, user):
     if index != None:
