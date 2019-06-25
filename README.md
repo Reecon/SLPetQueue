@@ -53,6 +53,7 @@ preview | index | Responds in a whisper with the index, username and message of 
 skip | | Will skip the next item in the list for and respond in a whisper with information about the skipped item and the next item in line.
 remove | index | Will remove the item at the given index and respond in a whisper with information about the removed item.
 info | | Responds in a whisper with the length of the queue and the current position of the pointer.
+direct | link | Opens the given link directly in the viewer.
 clear | | Deletes the entire queue!
 
 __Note:__ All indices are starting at `0`. For example `!q preview 0` gives information about the first element of the queue.
